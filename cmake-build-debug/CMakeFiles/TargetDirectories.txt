@@ -1,0 +1,3 @@
+/usr/wsProjects/wsCLion/tabelaHash/cmake-build-debug/CMakeFiles/tabelaHash.dir
+/usr/wsProjects/wsCLion/tabelaHash/cmake-build-debug/CMakeFiles/edit_cache.dir
+/usr/wsProjects/wsCLion/tabelaHash/cmake-build-debug/CMakeFiles/rebuild_cache.dir
