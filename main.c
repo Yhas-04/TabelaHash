@@ -13,16 +13,21 @@ typedef struct lista {
 } no;
 
 no* list[MAX];
-int hashSize = 0;
+
+void startList(no **head, no **list);
 bool check(no *head);
-void pushNames(FILE *f, no **head);
-void print(no *list[], int quant, int i);
-no* push(no **head, char name[20]);
+void pushNames(FILE *f, no **head, int *quant);
+no* push(no **head, char name[20], int *quant);
 no* split(no *source, no **front, no **back, int keyFind);
 no* merge(no *front, no *back);
 void mergeSort(no **head);
 void hashList(no *head, no **list, int *quant);
-void menu(no *head, FILE *f);
+int binarySearch(no *list[], int quant, int key);
+no* findNode(char data[30], no *list[]);
+void removeNode(char data[30], no *list[]);
+void checkElements(no *list[], int quant, int i);
+void freeList(no **list[], int quant);
+void print(no *list[], int quant, int i);
 
 void startList(no **head, no **list) {
     *head = NULL;
@@ -37,7 +42,7 @@ int hash(int chave) {
     return chave % MAX;
 }
 
-no* push(no **head, char name[20]) {
+no* push(no **head, char name[20], int *quant) {
     no *new = malloc(sizeof(no));
     if(!new) {
         exit(1);
@@ -54,15 +59,15 @@ no* push(no **head, char name[20]) {
     }
     new->prev = NULL;
     *head = new;
-    hashSize++;
+    *quant++;
     return new;
 }
 
-void pushNames(FILE *f, no **head) {
+void pushNames(FILE *f, no **head, int *quant) {
     char namesFile[20];
     while (fgets(namesFile, sizeof(namesFile), f) != NULL) {
         namesFile[strcspn(namesFile, "\n")] = '\0';
-        push(head, namesFile);
+        push(head, namesFile, quant);
     }
 }
 
@@ -127,19 +132,23 @@ void hashList(no *head, no **list, int *quant) {
     }
     while (aux != NULL) {
         int i = hash(aux->key);
-            list[i] = aux;
-        while (aux2 != NULL && aux->key == aux2->key) {
-                aux2 = aux2->next;
-            }
-            aux = aux2;
-        if(aux2!=NULL) {
-            aux2->prev->next = NULL;
-            aux2->prev = NULL;
-            aux2 = aux2->next;
-        }
-        *quant = i;
+             if (list[i] == NULL) {
+                     list[i] = aux;
+               }else
+               {
+                   while (aux2 != NULL && aux->key == aux2->key) {
+                       aux2 = aux2->next;
+                   }
+                   aux = aux2;
+                   if(aux2!=NULL) {
+                       aux2->prev->next = NULL;
+                       aux2->prev = NULL;
+                       aux2 = aux2->next;
+                   }
+               }
     }
 }
+
 int binarySearch(no *list[], int quant, int key) {
     int low = 0;
     int high = quant - 1;
@@ -162,7 +171,7 @@ int binarySearch(no *list[], int quant, int key) {
     return 0;
 }
 
-no* findNode(char data[30], no *list[]) {
+no* findNode(char data[30], no *list[]){
     int index = hash((int)data[0]-12);
     no* aux = list[index];
     no *temp = aux;
@@ -171,7 +180,6 @@ no* findNode(char data[30], no *list[]) {
                 printf("Encontrado na lista no índice [%d]\n Nome: %s chave: {%d}\n", index, temp->name, temp->key);
                 return temp;
             }
-            printf("%s [%d] ", temp->name, temp->key);
             temp = temp->next;
         }
     return NULL;
@@ -196,25 +204,72 @@ void removeNode(char data[30], no *list[]){
     }
 }
 
-void print(no *list[], int quant, int i) {
-    int hist = 0;
+void checkElements(no *list[], int quant, int i){
+    int elements = 0;
     no* *aux = &list[0];
     no *temp = malloc(sizeof(no));
+
     for ( i = i; i < quant; i++) {
-        printf("NOMES NA POSIÇÃO:[%d]\n", i);
         temp = aux[i];
         while (temp != NULL) {
-            printf("%s [%d]| ", temp->name, temp->key);
             temp = temp->next;
-            hist++;
-        }printf("TOTAL:%d\n", hist);
+            elements++;
+        }printf("[%d] :%d\n",i, elements);
         printf("\n__________________________\n");
-        hist = 0;
+        elements = 0;
+    }
+    free(temp);
+}
+void freeList(no **list[], int quant){
+    if(list==NULL)
+    {
+        printf("Lista Vazia!\n");
+        return;
+    }
+    no* *aux = list;
+    for (int i = 0; i < quant; i++) {
+        no *temp = aux[i];
+
+        while (temp != NULL) {
+            if(temp->next==NULL)
+            {
+                free(temp);
+                break;
+            }
+            temp = temp->next;
+            free(temp->prev);
+        }
+        list[i] = NULL;
+    }
+    if(list==NULL)
+    {
+        printf("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
     }
 }
 
-int main(void) {
-    FILE *f = fopen("/home/yhas/Documents/TabelaHashNomes/nomes.txt", "r");
+void print(no *list[], int quant, int i) {
+    int elements = 0;
+    no* *aux = &list[0];
+    if(list[i]==NULL)
+    {
+        printf("Lista Vazia!\n");
+        return;
+    }
+    for ( i = i; i < quant; i++) {
+        printf("NOMES NA POSIÇÃO:[%d]\n", i);
+        no *temp = aux[i];
+        while (temp != NULL) {
+            printf("%s [%d]| ", temp->name, temp->key);
+            temp = temp->next;
+            elements++;
+        }printf("TOTAL:%d\n", elements);
+        printf("\n__________________________\n");
+        elements = 0;
+    }
+}
+
+int main() {
+    FILE *f = fopen("/usr/wsProjects/wsCLion/tabelaHash/nomes.txt", "r");
     if (f == NULL) {
         printf("Arquivo vazio!");
         return 1;
@@ -222,26 +277,36 @@ int main(void) {
     no *head;
     int quant = 0;
     startList(&head, list);
-    pushNames(f, &head);
+    pushNames(f, &head, &quant);
     mergeSort(&head);
     hashList(head, list, &quant);
-   // binarySearch(list, quant, 0);
+
     printf("Buscando um nome:\n");
-    findNode("ANDRESSA", list);
+    findNode("ALIKSON", list);
+
     printf("\nImprimindo lista de chaves do nome a ser removido:\n");
     getchar();
     print(list, 1, 0);
+
     printf("\n Removendo o mesmo nome:\n");
     getchar();
-    removeNode("ANDRESSA", list);
+    removeNode("ALIKSON", list);
+
     printf("\n______________________________________________________________________________________________________________________\n");getchar();
-    printf("\n________________________________________________________________________________________________________________________-_\n");getchar();
+
     printf("\nImprimindo lista de chaves do nome removido:\n");
-    printf("\n_____________________________\n");getchar();
     print(list, 1, 0);
+
+    printf("\nDistribuição de chaves:\n");
     getchar();
+    checkElements(list,MAX, 0);
+
     printf("\nImprimindo lista com todos os nomes:\n");
-  /*  print(list, quant, 0);*/
+    print(list, MAX, 0);
+
+    printf("\nLiberando lista:\n");
+    freeList(list, MAX);
+    print(list, MAX, 0);
     fclose(f);
 
     return 0;
